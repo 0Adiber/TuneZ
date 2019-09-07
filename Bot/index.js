@@ -1,11 +1,15 @@
 const Discord = require('discord.js');
-const video = require('./getVideoUrl');
+const Player = require('./utils/Player').Player;
 
 class Bot {
+
     constructor(token, id, prefix) {
         this.token = token;
         this.id = id;
         this.prefix = prefix;
+
+        this.servers = new Map();
+
         this.start();
     }
     start() {
@@ -14,38 +18,31 @@ class Bot {
 
         client.on('ready', () => {
             this.logger(`Logged in as ${client.user.tag}!`);
+
+            client.guilds.array().forEach((guild) => {
+                this.servers.set(guild.id, Player(guild));
+                this.logger('+ ' + guild.name);
+            });
+
+            this.logger("Servers: " + this.servers.size)
+
         });
 
         client.on('message', msg => {
-            if (!msg.toString().startsWith(this.prefix)) return;
-            let cmd = msg.toString().substr(1).split(" ");
+            if(!msg.content.startsWith(this.prefix)) return;
 
-            if(cmd[0].trim() === ("play")) {
-                if(cmd.length != 2) {
-                    msg.reply(`The command is: '${this.prefix}play <youtube url/title>`);
-                    msg.react("❌");
-                    return;
-                }
-                msg.react("✅");
-                if(msg.member.voiceChannel) {
-                    msg.member.voiceChannel.join()
-                        .then(connection => {
-                            video.getUrl(cmd[1])
-                            .then(result => {
-                                if(result.status != "success"){
-                                    msg.reply(result.status);
-                                    return;
-                                }
-                                msg.reply("Now playing: " + result.title);
-                                this.dispatcher = connection.playArbitraryInput(result.url);
-                            });
-                            
-                        })
-                        .catch(err => console.log(err));
-                } else {
-                    msg.reply("You have to be in a voice channel!");
-                }
+            if(msg.content.startsWith(`${this.prefix}play`)) {
+                this.servers.get(msg.channel.guild.id).execute(msg);
+            } else if(msg.content.startsWith(`${this.prefix}stop`)) {
+                this.servers.get(msg.channel.guild.id).stop(msg);
+            } else if(msg.content.startsWith(`${this.prefix}pause`)) {
+                this.servers.get(msg.channel.guild.id).pause(msg);
+            } else if(msg.content.startsWith(`${this.prefix}resume`)) {
+                this.servers.get(msg.channel.guild.id).resume(msg);
+            } else if(msg.content.startsWith(`${this.prefix}skip`)) {
+                this.servers.get(msg.channel.guild.id).skip(msg);
             }
+
         });
     }
     logger(message) {

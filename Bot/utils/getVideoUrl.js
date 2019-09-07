@@ -1,6 +1,6 @@
 
 const fetch = require('node-fetch');
-const config = require('../config.json');
+const config = require('../../config.json');
 const yt = require('youtube-dl');
 
 const getUrl = async(video) => {
@@ -11,9 +11,12 @@ const getUrl = async(video) => {
             video = video.split("/");
             video = video.pop().replace("watch?v=", "");
 
-            yt.getInfo("https://www.youtube.com/watch?v=" + video, ['--format=worst'], function(err, info) {
+            yt.getInfo("https://www.youtube.com/watch?v=" + video, ['--format=best'], function(err, info) {
                 if(err) {
-                    throw err;
+                    reject({
+                        stauts: "no success",
+                        err: err
+                    });
                 }
                 let url = info.url;
 
@@ -40,15 +43,22 @@ const getUrl = async(video) => {
                 }
                 let title = url.items[0].snippet.title;
                 url = url.items[0].id.videoId;
-                fetch("http://youlink.epizy.com/?url=https://youtube.com/watch?v=" + url).then(res => res.json()).then(r => {
-                    url = r;
-                    url = url[url.length-1].url;
+                
+                yt.getInfo("https://www.youtube.com/watch?v=" + video, ['--format=best'], function(err, info) {
+                    if(err) {
+                        reject({
+                            stauts: "no success",
+                            err: err
+                        });
+                    }
+                    url = info.url;
                     resolve({
                         status: "success",
                         title: title,
-                        url: url 
+                        url: url
                     });
-                }).catch(err => console.log(err));
+                });
+
             }).catch(err => console.log(err));
         }
 
