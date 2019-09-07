@@ -21,7 +21,7 @@ class Bot {
             this.logger(`Logged in as ${client.user.tag}!`);
 
             client.guilds.array().forEach((guild) => {
-                this.servers.set(guild.id, Player(guild, this.color));
+                this.servers.set(guild.id, Player(guild, {color: this.color}));
                 this.logger('+ ' + guild.name);
             });
 

@@ -2,13 +2,17 @@ const {RichEmbed, Message} = require('discord.js')
 const video = require('./getVideoUrl');
 
 class Player{
-    constructor(guild, color) {
+    constructor(guild, options) {
         this.guild = guild;
         this.queue = [];
         this.playing = false;
-        this.color = color;
         this.volume = 1;
         this.loop = false;
+
+        //options
+        options = options || {};
+        this.color = options.color || '#ff8c00';
+        this.countryCode = options.countryCode || 'at';
     }
 
     /**
@@ -25,27 +29,39 @@ class Player{
 
         message.react("✅");
         const songInfo = await video.getUrl(args);
-        const song = {
-            title: songInfo.title,
-            url: songInfo.url,
-            requestedBy: message.member.user.username,
-            officialUrl: songInfo.officialUrl
-        }
-        this.queue.push(song);
-        message.reply(`${song.title} has been added to the queue!`);
-        
-        if(this.playing) return;
 
-        message.channel.send("Now Playing 🎵 `" + song.title + "`");
-        this.voiceChannel = voiceChannel;
-        this.play();
+        if(songInfo.songs) {//a list of songs because of playlist
+            this.queue = [...this.queue, ...songInfo.songs];
+            message.channel.send(`The playlist has been added to the queue!`);
+
+            if(this.playing) return;
+
+            message.channel.send("Now Playing 🎵 `" + songInfo.songs[0].title + "`");
+            this.voiceChannel = voiceChannel;
+            this.play();
+        } else {    //only one song
+            const song = {
+                title: songInfo.title,
+                url: songInfo.url,
+                requestedBy: message.member.user.username,
+                officialUrl: songInfo.officialUrl
+            }
+
+            this.queue.push(song);
+            message.channel.send(`${song.title} has been added to the queue!`);
+            if(this.playing) return;
+
+            message.channel.send("Now Playing 🎵 `" + song.title + "`");
+            this.voiceChannel = voiceChannel;
+            this.play();
+        }
     }
 
     /**
      * Plays the songs and creates the dispatcher
      * @param {Message} message
      */
-    play() {
+    async play() {
         this.playing = true;
         try {
             this.voiceChannel.join().then(connection => {
@@ -358,7 +374,8 @@ class Player{
      * Play the wanted Song now, and skip the rest of the Queue
      * @param {Message} message
      */
-    playskip(message) {
+    async playskip(message) {
+        const args = message.content.replace("!play", "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -381,7 +398,8 @@ class Player{
      * Play the wanted Song now, and then continue with the queue
      * @param {Message} message
      */
-    playnow(message) {
+    async playnow(message) {
+        const args = message.content.replace("!play", "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -401,4 +419,4 @@ class Player{
 
 }
 
-exports.Player = (guild, color) => new Player(guild, color);
+exports.Player = (guild, options) => new Player(guild, options);
