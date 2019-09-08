@@ -1,6 +1,5 @@
 const {Client} = require('discord.js');
 const Player = require('./utils/Player').Player;
-const config = require('../config.json');
 
 class Bot {
 
@@ -11,7 +10,7 @@ class Bot {
         this.color = color;
 
         //config
-        this.countryCode = config.countryCode||'AT';
+        this.countryCode = process.env.defaultCountryCode||'AT';
 
         this.servers = new Map();
 

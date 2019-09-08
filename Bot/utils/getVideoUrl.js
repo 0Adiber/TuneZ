@@ -1,6 +1,5 @@
 
 const fetch = require('node-fetch');
-const config = require('../../config.json');
 const yt = require('youtube-dl');
 
 const getUrl = async(video) => {
@@ -48,7 +47,7 @@ const getUrl = async(video) => {
         } else {
             video = temp.join("+");
             video = video.replace(" ", "+")
-            fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q="+video+"&key=" + config.apiKey).then(res => res.json()).then(r => {
+            fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q="+video+"&key=" + process.env.apiKey).then(res => res.json()).then(r => {
                 let url = r;
                 if(url.items.length == 0) {
                     reject({
@@ -97,7 +96,7 @@ const getList = async(playlistId, pageToken) => {
 
 const getPlaylist = (video, pageToken) => {
     return new Promise((resolve, reject) => {
-        fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + video + "&key=" + config.apiKey + "&pageToken="+pageToken)
+        fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + video + "&key=" + proces.env.apiKey + "&pageToken="+pageToken)
         .then(res => res.json())
         .then(res => {
             if(res.error) {
@@ -125,7 +124,7 @@ const getPlaylist = (video, pageToken) => {
 const getCharts = (code) => {
     return new Promise((resolve, reject) => {
 
-        fetch("https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=10&videoCategoryId=10&regionCode=" + code + "&key="+config.apiKey)
+        fetch("https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=10&videoCategoryId=10&regionCode=" + code + "&key="+process.env.apiKey)
         .then(res => res.json())
         .then(res => {
             if(res.error) {
