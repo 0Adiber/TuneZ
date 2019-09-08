@@ -57,7 +57,6 @@ const getUrl = async(video) => {
                     });
                     return;
                 }
-                let title = url.items[0].snippet.title;
                 url = url.items[0].id.videoId;
                 
                 yt.getInfo("https://www.youtube.com/watch?v=" + url, ['--format=worst'], function(err, info) {
@@ -68,12 +67,12 @@ const getUrl = async(video) => {
                         });
                         return;
                     }
-                    url = info.url;
                     resolve({
                         status: "success",
-                        title: title,
-                        url: url,
-                        officialUrl: "https://www.youtube.com/watch?v=" + video
+                        title: info.title,
+                        url: info.url,
+                        officialUrl: "https://www.youtube.com/watch?v=" + info.id,
+                        vid: info.id
                     });
                 });
 
@@ -123,6 +122,33 @@ const getPlaylist = (video, pageToken) => {
     });
 }
 
+const getCharts = (code) => {
+    return new Promise((resolve, reject) => {
+
+        fetch("https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=10&videoCategoryId=10&regionCode=" + code + "&key="+config.apiKey)
+        .then(res => res.json())
+        .then(res => {
+            if(res.error) {
+                resolve({
+                    status: "no success in fetching the charts",
+                    err: res
+                })
+                return;
+            }
+
+            Promise.all(res.items.map(item => {
+                return getInfo(item.id);
+            })).then(promises => {
+                resolve({
+                    songs: [...promises].filter(v => Object.keys(v).length !== 0)
+                });
+            });
+
+        }).catch(err => console.log(err));
+
+    });
+}
+
 const getInfo = (video) => {
     return new Promise((resolve, reject) => {
 
@@ -139,7 +165,8 @@ const getInfo = (video) => {
                     status: "success",
                     title: info.title,
                     url: info.url,
-                    officialUrl: "https://www.youtube.com/watch?v=" + video
+                    officialUrl: "https://www.youtube.com/watch?v=" + video,
+                    vid: info.id
                 });
             });
 
@@ -147,3 +174,4 @@ const getInfo = (video) => {
 }
 
 exports.getUrl = (video) => getUrl(video);
+exports.getCharts = (code) => getCharts(code);

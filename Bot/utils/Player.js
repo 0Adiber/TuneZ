@@ -1,5 +1,6 @@
 const {RichEmbed, Message} = require('discord.js')
 const video = require('./getVideoUrl');
+const fs = require('fs');
 
 class Player{
     constructor(guild, options) {
@@ -12,7 +13,7 @@ class Player{
         //options
         options = options || {};
         this.color = options.color || '#ff8c00';
-        this.countryCode = options.countryCode || 'at';
+        this.countryCode = options.countryCode || 'AT';
     }
 
     /**
@@ -31,6 +32,9 @@ class Player{
         const songInfo = await video.getUrl(args);
 
         if(songInfo.songs) {//a list of songs because of playlist
+            songInfo.forEach((song) => {
+                song.requestedBy = message.member.user.username;
+            });
             this.queue = [...this.queue, ...songInfo.songs];
             message.channel.send(`The playlist has been added to the queue!`);
 
@@ -118,7 +122,7 @@ class Player{
      * @param {Message} message
      */
     resume(message) {
-        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to skip songs!');
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to resume songs!');
         if(!this.connection.dispatcher) return message.reply('I can\'t resume, when I never paused!');
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');   
         if(!this.connection.dispatcher.paused) return;
@@ -207,15 +211,16 @@ class Player{
     }
 
     /**
-     * Makes the Music Bot leave the channel, but only pauses the Queue
+     * Makes the Music Bot leave the channel, but only pauses the Queue and stops the current song
      * @param {Message} message
      */
     disconnect(message) {
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
-        if(!message.client.voiceChannel) return message.reply("I am currently not in a voice channel!");
+        if(!this.voiceChannel) return message.reply("I am currently not in a voice channel!");
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
-        this.pause(message);
+        this.connection.dispatcher.end();
         this.voiceChannel.leave();
+        this.voiceChannel = undefined;
     }
 
     /**
@@ -415,6 +420,153 @@ class Player{
         this.queue.unshift(song);
         message.reply(`🎵 ${song.title} playing now!`);
         this.connection.dispatcher.end();
+    }
+    /**
+     * Add the top 10 Songs from the yt charts to the queue (for your region=> !charts <region code>)
+     * regionCode =  ISO 3166-1 alpha-2 country code
+     * 
+     * sadly it doesn't work that well, because yt messed up with the ordering of the trends, but when that's fixed, it should yield the top 10, and not just any of the trends
+     * 
+     * @param {Message} message 
+     */
+    async charts(message){
+        const args = message.content.split(' ');
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
+        if(this.playing) {
+            if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+        }
+        message.react("✅");
+        const code = args[1] || this.countryCode;
+        const songInfo = await video.getCharts(code);
+        
+        if(!songInfo.status === "success") {
+            message.channel.send("No success getting the Trends!");
+            return;
+        }
+
+        songInfo.forEach((song) => {
+            song.requestedBy = message.member.user.username;
+        });
+
+        this.queue = [...this.queue, ...songInfo.songs];
+        message.channel.send('Added the trending songs 🔥 from youtube to the queue');
+        if(!this.playing) {
+            this.voiceChannel = message.member.voiceChannel;
+            this.play();
+        }
+    }
+
+    /**
+     * Every user can have his personal playlist with a maximum of 25 songs per user
+     * @param {Message} message 
+     */
+    default(message) {        
+        message.react("✅");
+        const args = message.content.split(' ');
+        if(!fs.existsSync(`./Bot/userdata/${message.channel.guild.id}`)) fs.mkdirSync(`./Bot/userdata/${message.channel.guild.id}`, { recursive: true });
+
+        fs.closeSync(fs.openSync(`./Bot/userdata/${message.channel.guild.id}/${message.member.user.id}.json`, 'a'));
+
+        let content = JSON.parse(fs.readFileSync(`./Bot/userdata/${message.channel.guild.id}/${message.member.user.id}.json`, {encoding:'utf8'})||"{}");
+
+        if(args[1] === 'add') {
+            if(Object.keys(content).length >= 25) return message.channel.send("You already have 25 songs in your default playlist!");
+            video.getUrl(args.slice(2)).then(song => {
+                if(song.songs) {
+                    song.songs.forEach((s) => {
+                        if(Object.keys(content).length >= 25) return;
+                        content[s.vid] = {
+                            title: s.title,
+                            url: s.url,
+                            officialUrl: s.officialUrl
+                        }
+                    });
+                    message.channel.send(`Added the playlist to your default playlist.`)
+                } else {
+                    content[song.vid] = {
+                        title: song.title,
+                        url: song.url,
+                        officialUrl: song.officialUrl
+                    };
+                    message.channel.send(`Added \`${song.title}\` to your default playlist.`)
+                }
+                fs.writeFileSync(`./Bot/userdata/${message.channel.guild.id}/${message.member.user.id}.json`, JSON.stringify(content));
+                
+            }).catch(err => console.log(err));
+        } else if(args[1] === 'remove') {
+            video.getUrl(args.slice(2)).then(song => {
+                if(song.songs) {
+                    song.songs.forEach((s) => {
+                        delete content[s.vid];
+                    });
+                } else {
+                    delete content[song.vid];
+                }
+                fs.writeFileSync(`./Bot/userdata/${message.channel.guild.id}/${message.member.user.id}.json`, JSON.stringify(content));
+                message.channel.send(`Removed 🗑️ \`${song.title}\` from your default playlist.`)
+            }).catch(err=>console.log(err));
+        } else if(args[1] === 'clear') {
+            fs.writeFileSync(`./Bot/userdata/${message.channel.guild.id}/${message.member.user.id}.json`, JSON.stringify({}));
+            message.channel.send(`Cleared 🆑 your default playlist`);
+        } else if(args[1] === 'list') {
+            if(Object.keys(content).length === 0) return message.channel.send('Your default playlist is empty!');
+            let description = "";
+            let i = 0;
+            Object.values(content).forEach(song => {
+                description = description.concat(`\n\`${++i}.\` [${song.title}](${song.officialUrl})`);
+            });
+            const embed = new RichEmbed()
+            .setTitle(`${message.member.user.username} default playlist`)
+            .setColor(this.color)
+            .setDescription(description);
+            message.channel.send(embed);
+        } else if(!args[1]) {
+            if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to play your default!');
+            if(this.playing) {
+                if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+            }
+
+            if(Object.keys(content).length === 0) return message.channel.send('You don\'t have any songs in your default playlist yet.');
+
+            Object.values(content).forEach(song => {
+                this.queue.push({
+                    title: song.title,
+                    url: song.url,
+                    officialUrl: song.officialUrl,
+                    requestedBy: message.member.user.username
+                });
+            });
+            
+            message.channel.send(`Your default playlist has been added to the queue!`);
+
+            if(!this.playing){
+                this.voiceChannel = message.member.voiceChannel;
+                this.play();
+                message.channel.send(`Now Playing 🎵 \`${this.queue[0].title}\``);
+            }
+        } else {
+            message.channel.send('The command is \'default [add/remove/clear <query/link>]\'');
+        }
+        
+    }
+
+    /**
+     * shows what song is currently playing
+     * @param {Message} message 
+     */
+    np(message) {
+        if(!this.playing) {
+            const embed = new RichEmbed()
+            .setTitle("Currently Playing")
+            .setColor(this.color)
+            .setDescription('There is currenly no song playing.');
+            return message.channel.send(embed);
+        }
+        const embed = new RichEmbed()
+            .setTitle("Currently Playing")
+            .setColor(this.color)
+            .setDescription(`\`${this.currentSong.title}\` | Requested by: ${this.currentSong.requestedBy}`);
+        message.channel.send(embed);
     }
 
 }

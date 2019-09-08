@@ -1,5 +1,6 @@
 const {Client} = require('discord.js');
 const Player = require('./utils/Player').Player;
+const config = require('../config.json');
 
 class Bot {
 
@@ -9,11 +10,14 @@ class Bot {
         this.prefix = prefix;
         this.color = color;
 
+        //config
+        this.countryCode = config.countryCode||'AT';
+
         this.servers = new Map();
 
         this.start();
     }
-    start() {
+    async start() {
         const client = new Client();
         client.login(this.token);
 
@@ -21,7 +25,7 @@ class Bot {
             this.logger(`Logged in as ${client.user.tag}!`);
 
             client.guilds.array().forEach((guild) => {
-                this.servers.set(guild.id, Player(guild, {color: this.color}));
+                this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode}));
                 this.logger('+ ' + guild.name);
             });
 
@@ -64,7 +68,13 @@ class Bot {
                 this.servers.get(msg.channel.guild.id).skip(msg);
             } else if(msg.content.startsWith(`${this.prefix}clear`)) {
                 this.servers.get(msg.channel.guild.id).clear(msg);
-            }
+            } else if(msg.content.startsWith(`${this.prefix}charts`)) {
+                this.servers.get(msg.channel.guild.id).charts(msg);
+            } else if(msg.content.startsWith(`${this.prefix}default`)) {
+                this.servers.get(msg.channel.guild.id).default(msg);
+            } else if(msg.content.startsWith(`${this.prefix}np`)) {
+                this.servers.get(msg.channel.guild.id).np(msg);
+            } 
 
         });
     }
