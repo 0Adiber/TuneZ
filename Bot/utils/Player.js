@@ -186,7 +186,7 @@ class Player{
      * Change the volume of the Player(0.5 = 50%, 1 = 100%, 2 = 200%, ...)
      * @param {Message} message
      */
-    volume(message) {
+    setVolume(message) {
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to skip songs!');
         if(!this.playing) return message.reply('There is currently no song playing!');
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -201,8 +201,8 @@ class Player{
 
         let em;
         if(vol>this.volume) em = "🔊";
-        else if(vol<this.volume) em = "🔉";
         else if(vol==0) em = "🔇";
+        else if(vol<this.volume) em = "🔉";
         else em = "🔈";
 
         this.connection.dispatcher.setVolume(vol);
@@ -380,7 +380,7 @@ class Player{
      * @param {Message} message
      */
     async playskip(message) {
-        const args = message.content.replace("!play", "").trim().replace(/\s\s+/g, ' ').split(' ');
+        const args = message.content.replace("!playskip", "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -388,15 +388,36 @@ class Player{
         this.queue = []
         message.react("✅");
         const songInfo = await video.getUrl(args);
-        const song = {
-            title: songInfo.title,
-            url: songInfo.url,
-            requestedBy: message.member.user.username,
-            officialUrl: songInfo.officialUrl
+
+        if(songInfo.songs) { //playlist
+            songInfo.songs.forEach((s) => {
+                const song = {
+                    title: s.title,
+                    url: s.url,
+                    requestedBy: message.member.user.username,
+                    officialUrl: s.officialUrl
+                }
+                this.queue.push(song);
+            })
+            message.reply(`🎵 ${this.queue[0].title} playing now!`);
+        } else { //only one song
+            const song = {
+                title: songInfo.title,
+                url: songInfo.url,
+                requestedBy: message.member.user.username,
+                officialUrl: songInfo.officialUrl
+            }
+            this.queue.push(song);
+            
+            message.reply(`🎵 ${song.title} playing now!`);
         }
-        this.queue.push(song);
-        message.reply(`🎵 ${song.title} playing now!`);
-        this.connection.dispatcher.end();
+
+        if(this.connection && this.connection.dispatcher) {
+            this.connection.dispatcher.end();
+        } else {
+            this.voiceChannel = message.member.voiceChannel;
+            this.play();
+        }
     }
 
     /**
@@ -404,7 +425,7 @@ class Player{
      * @param {Message} message
      */
     async playnow(message) {
-        const args = message.content.replace("!play", "").trim().replace(/\s\s+/g, ' ').split(' ');
+        const args = message.content.replace("!playnow", "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -419,7 +440,12 @@ class Player{
         }
         this.queue.unshift(song);
         message.reply(`🎵 ${song.title} playing now!`);
-        this.connection.dispatcher.end();
+        if(this.connection && this.connection.dispatcher) {
+            this.connection.dispatcher.end();
+        } else {
+            this.voiceChannel = message.member.voiceChannel;
+            this.play();
+        }
     }
     /**
      * Add the top 10 Songs from the yt charts to the queue (for your region=> !charts <region code>)

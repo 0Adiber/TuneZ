@@ -1,5 +1,6 @@
 const {Client} = require('discord.js');
 const Player = require('./utils/Player').Player;
+require('dotenv').config()
 
 class Bot {
 
@@ -50,7 +51,7 @@ class Bot {
             }  else if(msg.content.startsWith(`${this.prefix}queue`)) {
                 this.servers.get(msg.channel.guild.id).listQueue(msg);
             } else if(msg.content.startsWith(`${this.prefix}volume`)) {
-                this.servers.get(msg.channel.guild.id).volume(msg);
+                this.servers.get(msg.channel.guild.id).setVolume(msg);
             } else if(msg.content.startsWith(`${this.prefix}help`)) {
                 this.servers.get(msg.channel.guild.id).help(msg);
             } else if(msg.content.startsWith(`${this.prefix}disconnect`)) {
