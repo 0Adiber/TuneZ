@@ -28,7 +28,7 @@ class Bot {
             client.user.setPresence({ game: {name: 'by Adiber', type: 'WATCHING', url: 'https://adiber.at'}, status: 'dnd'}).catch(err => console.log(err));
 
             client.guilds.array().forEach((guild) => {
-                this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode}));
+                this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
                 this.logger('+ ' + guild.name);
             });
 
@@ -37,47 +37,34 @@ class Bot {
         });
 
         client.on('message', msg => {
-            if(!msg.content.startsWith(this.prefix)) return;
 
-            if(msg.content.startsWith(`${this.prefix}playnow `)) {
-                this.servers.get(msg.channel.guild.id).playnow(msg);
-            } else if(msg.content.startsWith(`${this.prefix}playskip `)) {
-                this.servers.get(msg.channel.guild.id).playskip(msg);
-            } else if(msg.content.startsWith(`${this.prefix}play `)) {
-                this.servers.get(msg.channel.guild.id).execute(msg);
-            } else if(msg.content.startsWith(`${this.prefix}stop`)) {
-                this.servers.get(msg.channel.guild.id).stop(msg);
-            } else if(msg.content.startsWith(`${this.prefix}pause`)) {
-                this.servers.get(msg.channel.guild.id).pause(msg);
-            } else if(msg.content.startsWith(`${this.prefix}resume`)) {
-                this.servers.get(msg.channel.guild.id).resume(msg);
-            }  else if(msg.content.startsWith(`${this.prefix}queue`)) {
-                this.servers.get(msg.channel.guild.id).listQueue(msg);
-            } else if(msg.content.startsWith(`${this.prefix}volume `)) {
-                this.servers.get(msg.channel.guild.id).setVolume(msg);
-            } else if(msg.content.startsWith(`${this.prefix}help`)) {
-                this.servers.get(msg.channel.guild.id).help(msg);
-            } else if(msg.content.startsWith(`${this.prefix}disconnect`)) {
-                this.servers.get(msg.channel.guild.id).disconnect(msg);
-            } else if(msg.content.startsWith(`${this.prefix}loop`)) {
-                this.servers.get(msg.channel.guild.id).looping(msg);
-            } else if(msg.content.startsWith(`${this.prefix}remove `)) {
-                this.servers.get(msg.channel.guild.id).remove(msg);
-            } else if(msg.content.startsWith(`${this.prefix}move `)) {
-                this.servers.get(msg.channel.guild.id).move(msg);
-            } else if(msg.content.startsWith(`${this.prefix}skipto `)) {
-                this.servers.get(msg.channel.guild.id).skipto(msg);
-            } else if(msg.content.startsWith(`${this.prefix}skip`)) {
-                this.servers.get(msg.channel.guild.id).skip(msg);
-            } else if(msg.content.startsWith(`${this.prefix}clear`)) {
-                this.servers.get(msg.channel.guild.id).clear(msg);
-            } else if(msg.content.startsWith(`${this.prefix}charts`)) {
-                this.servers.get(msg.channel.guild.id).charts(msg);
-            } else if(msg.content.startsWith(`${this.prefix}default`)) {
-                this.servers.get(msg.channel.guild.id).default(msg);
-            } else if(msg.content.startsWith(`${this.prefix}np`)) {
-                this.servers.get(msg.channel.guild.id).np(msg);
-            } 
+            if(!msg.content.trim().startsWith(this.prefix)) return;
+
+            let cmd = msg.content.trim().substr(1).split(' ')[0];
+
+            let server = this.servers.get(msg.channel.guild.id);
+
+            if(cmd === 'play') server.execute(msg);
+            else if(cmd === 'playnow') server.playnow(msg);
+            else if(cmd === 'playskip') server.playskip(msg);
+            else if(cmd === 'stop') server.stop(msg);
+            else if(cmd === 'pause') server.pause(msg);
+            else if(cmd === 'resume') server.resume(msg);
+            else if(cmd === 'queue') server.listQueue(msg);
+            else if(cmd === 'volume') server.setVolume(msg);
+            else if(cmd === 'help') server.help(msg);
+            else if(cmd === 'disconnect') server.disconnect(msg);
+            else if(cmd === 'loop') server.looping(msg);
+            else if(cmd === 'remove') server.remove(msg);
+            else if(cmd === 'move') server.move(msg);
+            else if(cmd === 'skipto') server.skipto(msg);
+            else if(cmd === 'skip') server.skip(msg);
+            else if(cmd === 'clear') server.clear(msg);
+            else if(cmd === 'charts') server.charts(msg);
+            else if(cmd === 'default') server.default(msg);
+            else if(cmd === 'np') server.np(msg);
+            else if(cmd === 'p') server.execute(msg);
+            else if(cmd === 's') server.skip(msg);
 
         });
     }

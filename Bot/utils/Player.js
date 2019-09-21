@@ -9,11 +9,13 @@ class Player{
         this.playing = false;
         this.volume = 1;
         this.loop = false;
+        this.disconnected = false;
 
         //options
         options = options || {};
         this.color = options.color || '#ff8c00';
         this.countryCode = options.countryCode || 'AT';
+        this.prefix = options.prefix || '!';
     }
 
     /**
@@ -21,12 +23,25 @@ class Player{
      * @param {Message} message
      */
     async execute(message) {
-        const args = message.content.replace("!play", "").trim().replace(/\s\s+/g, ' ').split(' ');
+        const args = message.content.replace(`${this.prefix}play`, "").trim().replace(/\s\s+/g, ' ').split(' ');
         const voiceChannel = message.member.voiceChannel;
+
         if(!voiceChannel) return message.reply('You need to be in a voice channel to play music!');
         if(this.playing && message.member.voiceChannel.id !== this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         const permissions = voiceChannel.permissionsFor(message.client.user);
         if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.reply('I need the permissions to join and speak in your voice channel!');
+
+        if(args[0] == '') {
+            if(this.queue.length > 0) {
+                this.voiceChannel = voiceChannel;
+                let song = this.queue.shift();
+                message.channel.send("Now Playing 🎵 `" + song.title + "`");
+                this.queue.unshift(song);
+                this.play();
+                return;
+            }
+            return message.reply("There is no Song I could play!");
+        }
 
         message.react("✅");
         const songInfo = await video.getUrl(args);
@@ -67,12 +82,19 @@ class Player{
      */
     async play() {
         this.playing = true;
+        this.disconnected = false;
         try {
             this.voiceChannel.join().then(connection => {
                 this.connection = connection;
 
                 const song = this.queue.shift();
                 if(!song) {
+                    this.voiceChannel.leave();
+                    this.playing = false;
+                    return;
+                }
+
+                if(this.voiceChannel && this.voiceChannel.members.size < 2) {
                     this.voiceChannel.leave();
                     this.playing = false;
                     return;
@@ -90,7 +112,7 @@ class Player{
                 .on('end', ()=>{
                     console.log("Song ended!");
                     this.playing = false;
-                    this.play();
+                    if(!this.disconnected) this.play();
                 })
                 .on('error', error => {
                     console.log(error);
@@ -137,7 +159,6 @@ class Player{
      */
     skip(message) {
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to skip songs!');
-        if(this.queue.length == 0) return message.reply('There is no song that I could skip to!');
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         message.react("✅");
         this.connection.dispatcher.end();
@@ -192,6 +213,8 @@ class Player{
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         const args = message.content.split(' ');
         
+        if(args.length < 2) return message.reply("The current volume is "+ this.volume*100 + "% 🎚️");
+
         if(isNaN(args[1].trim())) {
             message.reply("The command is 'volume <num>', where num is the multiplier (0.5 = 50%, 1 = 100%, 2 = 200%, ...)")
             return;
@@ -215,12 +238,12 @@ class Player{
      * @param {Message} message
      */
     disconnect(message) {
-        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to let the bot disconnect!');
         if(!this.voiceChannel) return message.reply("I am currently not in a voice channel!");
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
-        this.connection.dispatcher.end();
+        message.react("✅");
+        this.disconnected = true;
         this.voiceChannel.leave();
-        this.voiceChannel = undefined;
     }
 
     /**
@@ -228,8 +251,7 @@ class Player{
      * @param {Message} message
      */
     help(message) {
-
-        let description = `✔-out http://ec2-34-226-142-167.compute-1.amazonaws.com:7043/ \n**for a list of commands**`;
+        let description = `✅-out http://ec2-34-226-142-167.compute-1.amazonaws.com:7043/ \n**for a list of commands**`;
 
         const embed = new RichEmbed()
             .setTitle("Help")
@@ -244,7 +266,7 @@ class Player{
      */
     looping(message) {
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
-        if(!this.playing) return message.reply("There is currently no song playing!");
+        if(!this.playing || !this.currentSong) return message.reply("There is currently no song playing!");
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         message.react("✅");
         if(!this.loop) {
@@ -380,7 +402,7 @@ class Player{
      * @param {Message} message
      */
     async playskip(message) {
-        const args = message.content.replace("!playskip", "").trim().replace(/\s\s+/g, ' ').split(' ');
+        const args = message.content.replace(`${this.prefix}playskip`, "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -425,7 +447,7 @@ class Player{
      * @param {Message} message
      */
     async playnow(message) {
-        const args = message.content.replace("!playnow", "").trim().replace(/\s\s+/g, ' ').split(' ');
+        const args = message.content.replace(`${this.prefix}playnow`, "").trim().replace(/\s\s+/g, ' ').split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -475,7 +497,7 @@ class Player{
         });
 
         this.queue = [...this.queue, ...songInfo.songs];
-        message.channel.send(`Added the top 10 trending songs 🔥 from ${process.env.DEFAULT_CCODE}'s YouTube to the queue.`);
+        message.channel.send(`Added the top 10 trending songs 🔥 from ${code}'s YouTube to the queue.`);
         if(!this.playing) {
             this.voiceChannel = message.member.voiceChannel;
             this.play();
