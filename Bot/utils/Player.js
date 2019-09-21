@@ -32,7 +32,7 @@ class Player{
         const songInfo = await video.getUrl(args);
 
         if(songInfo.songs) {//a list of songs because of playlist
-            songInfo.forEach((song) => {
+            songInfo.songs.forEach((song) => {
                 song.requestedBy = message.member.user.username;
             });
             this.queue = [...this.queue, ...songInfo.songs];
@@ -229,7 +229,7 @@ class Player{
      */
     help(message) {
 
-        description = `✔-out https://github.com/0Adiber/DiscordMusicBot \n**for a list of commands**`;
+        let description = `✔-out http:// \n**for a list of commands**`;
 
         const embed = new RichEmbed()
             .setTitle("Help")
@@ -457,7 +457,7 @@ class Player{
      */
     async charts(message){
         const args = message.content.split(' ');
-        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to use this command!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         }
@@ -470,12 +470,12 @@ class Player{
             return;
         }
 
-        songInfo.forEach((song) => {
+        songInfo.songs.forEach((song) => {
             song.requestedBy = message.member.user.username;
         });
 
         this.queue = [...this.queue, ...songInfo.songs];
-        message.channel.send('Added the trending songs 🔥 from youtube to the queue');
+        message.channel.send(`Added the top 10 trending songs 🔥 from ${process.env.DEFAULT_CCODE}'s YouTube to the queue.`);
         if(!this.playing) {
             this.voiceChannel = message.member.voiceChannel;
             this.play();
