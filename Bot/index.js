@@ -24,6 +24,9 @@ class Bot {
         client.on('ready', () => {
             this.logger(`Logged in as ${client.user.tag}!`);
 
+            client.user.setUsername("TuneZ");
+            client.user.setPresence({ game: {name: 'by Adiber', type: 'WATCHING', url: 'https://adiber.at'}, status: 'dnd'}).catch(err => console.log(err));
+
             client.guilds.array().forEach((guild) => {
                 this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode}));
                 this.logger('+ ' + guild.name);
@@ -36,11 +39,11 @@ class Bot {
         client.on('message', msg => {
             if(!msg.content.startsWith(this.prefix)) return;
 
-            if(msg.content.startsWith(`${this.prefix}playnow`)) {
+            if(msg.content.startsWith(`${this.prefix}playnow `)) {
                 this.servers.get(msg.channel.guild.id).playnow(msg);
-            } else if(msg.content.startsWith(`${this.prefix}playskip`)) {
+            } else if(msg.content.startsWith(`${this.prefix}playskip `)) {
                 this.servers.get(msg.channel.guild.id).playskip(msg);
-            } else if(msg.content.startsWith(`${this.prefix}play`)) {
+            } else if(msg.content.startsWith(`${this.prefix}play `)) {
                 this.servers.get(msg.channel.guild.id).execute(msg);
             } else if(msg.content.startsWith(`${this.prefix}stop`)) {
                 this.servers.get(msg.channel.guild.id).stop(msg);
@@ -50,7 +53,7 @@ class Bot {
                 this.servers.get(msg.channel.guild.id).resume(msg);
             }  else if(msg.content.startsWith(`${this.prefix}queue`)) {
                 this.servers.get(msg.channel.guild.id).listQueue(msg);
-            } else if(msg.content.startsWith(`${this.prefix}volume`)) {
+            } else if(msg.content.startsWith(`${this.prefix}volume `)) {
                 this.servers.get(msg.channel.guild.id).setVolume(msg);
             } else if(msg.content.startsWith(`${this.prefix}help`)) {
                 this.servers.get(msg.channel.guild.id).help(msg);
@@ -58,11 +61,11 @@ class Bot {
                 this.servers.get(msg.channel.guild.id).disconnect(msg);
             } else if(msg.content.startsWith(`${this.prefix}loop`)) {
                 this.servers.get(msg.channel.guild.id).looping(msg);
-            } else if(msg.content.startsWith(`${this.prefix}remove`)) {
+            } else if(msg.content.startsWith(`${this.prefix}remove `)) {
                 this.servers.get(msg.channel.guild.id).remove(msg);
-            } else if(msg.content.startsWith(`${this.prefix}move`)) {
+            } else if(msg.content.startsWith(`${this.prefix}move `)) {
                 this.servers.get(msg.channel.guild.id).move(msg);
-            } else if(msg.content.startsWith(`${this.prefix}skipto`)) {
+            } else if(msg.content.startsWith(`${this.prefix}skipto `)) {
                 this.servers.get(msg.channel.guild.id).skipto(msg);
             } else if(msg.content.startsWith(`${this.prefix}skip`)) {
                 this.servers.get(msg.channel.guild.id).skip(msg);

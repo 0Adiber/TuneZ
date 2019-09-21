@@ -97,7 +97,7 @@ const getList = async(playlistId, pageToken) => {
 
 const getPlaylist = (video, pageToken) => {
     return new Promise((resolve, reject) => {
-        fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + video + "&key=" + proces.env.YT_API_KEY + "&pageToken="+pageToken)
+        fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + video + "&key=" + process.env.YT_API_KEY + "&pageToken="+pageToken)
         .then(res => res.json())
         .then(res => {
             if(res.error) {
