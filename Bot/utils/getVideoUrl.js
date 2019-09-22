@@ -21,16 +21,6 @@ const getUrl = async(video) => {
                     endI = endI===-1?video.length:endI;
                 video = video.slice(startI+5, endI);
 
-                /*
-                getPlaylist(video, "")
-                .then(songs => {
-                    resolve({
-                        stauts: "success",
-                        songs: songs.songs
-                    })
-                });
-                */
-
                 let songs = await getList(video, "");
                 resolve({
                     status: "success",
@@ -78,6 +68,41 @@ const getUrl = async(video) => {
 
             }).catch(err => console.log(err));
         }
+    });
+
+}
+
+const getSearch = async(video) => {
+
+    return new Promise(async(resolve, reject)=>{
+        const temp = video;
+        video = video[0];
+        if(video.startsWith("https://www.youtube.com/") ||  video.startsWith("youtube.com/") || video.startsWith("www.youtube.com/") || video.startsWith("https://youtu.be/") || video.startsWith("youtu.be/")) {
+            return;
+        }
+        video = temp.join("+");
+        video = video.replace(" ", "+")
+        fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q="+video+"&key=" + process.env.YT_API_KEY).then(res => res.json()).then(r => {
+            let url = r;
+            if(!url.items) {
+                reject({
+                    status: "no success",
+                    err: "No videos found"
+                });
+                return;
+            }
+
+            Promise.all(url.items.map(item => {
+                return getInfo(item.id.videoId);
+            })).then(promises => {
+                resolve({
+                    songs: [...promises].filter(v => Object.keys(v).length !== 0),
+                    status: "success"
+                })
+            });
+            
+        }).catch(err => console.log(err));
+
     });
 
 }
@@ -175,3 +200,4 @@ const getInfo = (video) => {
 
 exports.getUrl = (video) => getUrl(video);
 exports.getCharts = (code) => getCharts(code);
+exports.getSearch = (video) => getSearch(video);

@@ -62,6 +62,12 @@ class Bot {
             else if(cmd === 'clear') server.clear(msg);
             else if(cmd === 'charts') server.charts(msg);
             else if(cmd === 'default') server.default(msg);
+            else if(cmd === 'loopqueue') server.loopingQueue(msg);
+            else if(cmd === 'replay') server.replay(msg);
+            else if(cmd === 'cleanup') server.cleanup(msg);
+            else if(cmd === 'shuffle') server.shuffle(msg);
+            else if(cmd === 'join') server.join(msg);
+            else if(cmd === 'search') server.search(msg);
             else if(cmd === 'np') server.np(msg);
             else if(cmd === 'p') server.execute(msg);
             else if(cmd === 's') server.skip(msg);

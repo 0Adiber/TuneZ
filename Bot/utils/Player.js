@@ -1,5 +1,6 @@
 const {RichEmbed, Message} = require('discord.js')
 const video = require('./getVideoUrl');
+const doShuffle = require('./shuffle');
 const fs = require('fs');
 
 class Player{
@@ -9,7 +10,11 @@ class Player{
         this.playing = false;
         this.volume = 1;
         this.loop = false;
+        this.loopQueue = false;
         this.disconnected = false;
+
+        this.searchList = [];
+        this.searchWaiting = false;
 
         //options
         options = options || {};
@@ -100,10 +105,6 @@ class Player{
                     return;
                 }
 
-                if(this.loop) {
-                    this.queue.unshift(song);   
-                }
-
                 this.currentSong = song;
                 const dispatcher =  this.connection.playArbitraryInput(song.url)
                 .on('start', () => {
@@ -111,6 +112,15 @@ class Player{
                 })
                 .on('end', ()=>{
                     console.log("Song ended!");
+
+                    if(this.loop) {
+                        this.queue.unshift(this.currentSong);   
+                    }
+    
+                    if(this.loopQueue) {
+                        this.queue.push(this.currentSong);
+                    }
+
                     this.playing = false;
                     if(!this.disconnected) this.play();
                 })
@@ -161,6 +171,9 @@ class Player{
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to skip songs!');
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         message.react("✅");
+        if(this.loop) {
+            this.queue.shift();
+        }
         this.connection.dispatcher.end();
         message.channel.send("Skipped ⏭️");
     }
@@ -270,13 +283,40 @@ class Player{
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         message.react("✅");
         if(!this.loop) {
-            this.queue.unshift(this.currentSong);
+            //this.queue.unshift(this.currentSong);
             this.loop = true;
-            message.channel.send(`Looping🔁 \`${this.currentSong.title}\``);
+            message.channel.send(`Looping🔂 \`${this.currentSong.title}\``);
         } else {
-            this.queue.shift();
+            //this.queue.shift();
             this.loop = false;
             message.channel.send(`Loop stopped ❌`);
+        }
+    }
+
+    /**
+     * Loop the whole queue -> stops the song loop
+     * @param {Message} message 
+     */
+
+    loopingQueue(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop the queue!');
+        if(!this.playing || !this.currentSong) return message.reply("There is currently no song playing!");
+        if(this.queue.length == 0) return message.reply("There is not a single song in the queue!");
+        if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+        message.react("✅");
+        if(this.loopQueue) {
+            this.loopQueue = false;
+            return message.channel.send(`Queue Loop stopped ❌`);
+        }
+        if(this.loop) {
+            this.queue.push(this.queue.shift());
+            this.loop = false;
+            this.loopQueue = true;
+            message.channel.send(`Loop stopped ❌, Queue Loop started 🔁`);
+        } else {
+            //this.queue.push(this.queue.shift());
+            this.loopQueue = true;
+            message.channel.send(`Queue Loop started 🔁`);
         }
     }
 
@@ -358,7 +398,7 @@ class Player{
      * @param {Message} message
      */
     skipto(message) {
-        const args = message.content.split(' ');
+        const args = message.content.trim().split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
         if(!this.playing) return message.reply("There is currently no song playing!");
         if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
@@ -403,7 +443,7 @@ class Player{
      */
     async playskip(message) {
         const args = message.content.replace(`${this.prefix}playskip`, "").trim().replace(/\s\s+/g, ' ').split(' ');
-        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to loop a song!');
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to playskip a song!');
         if(this.playing) {
             if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         }
@@ -508,7 +548,7 @@ class Player{
      * Every user can have his personal playlist with a maximum of 25 songs per user
      * @param {Message} message 
      */
-    default(message) {        
+    async default(message) {
         message.react("✅");
         const args = message.content.split(' ');
         if(!fs.existsSync(`./Bot/userdata/${message.channel.guild.id}`)) fs.mkdirSync(`./Bot/userdata/${message.channel.guild.id}`, { recursive: true });
@@ -602,7 +642,7 @@ class Player{
      * shows what song is currently playing
      * @param {Message} message 
      */
-    np(message) {
+    async np(message) {
         if(!this.playing) {
             const embed = new RichEmbed()
             .setTitle("Currently Playing")
@@ -615,6 +655,167 @@ class Player{
             .setColor(this.color)
             .setDescription(`\`${this.currentSong.title}\` | Requested by: ${this.currentSong.requestedBy}`);
         message.channel.send(embed);
+    }
+
+    /**
+     * plays the current song playing again
+     * @param {Messsage} message 
+     */
+    async replay(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to skip songs!');
+        if(!this.playing) return message.reply('There is currently no song playing!');
+        if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+        message.react("✅");
+        if(!this.loop) this.queue.unshift(this.currentSong);
+        this.connection.dispatcher.end();        
+    }
+
+    /**
+     * Removes absent user's songs from the queue
+     * @param {Message} message 
+     */
+    async cleanup(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to clean up the queue!');
+        if(!this.voiceChannel || !this.voiceChannel.connection) return message.reply('The bot needs to be in a channel, to clean up the queue!');
+        if(this.queue.length == 0) return message.reply('There is no song in the queue!');
+        if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+        message.react("✅");
+        let users = this.voiceChannel.members;
+        users.forEach((value, k, m) => {
+            for(let s in this.queue) {
+                if(value.user.username === s.requestedBy) {
+                    this.queue.splice(this.queue.indexOf(s.requestedBy), 1);
+                }
+            }
+        });
+        message.channel.send(`The loop is now cleaned up`);
+    }
+
+    /**
+     * Shuffles the queue and skips the current song
+     * @param {Message} message 
+     */
+    async shuffle(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to shuffle the queue!');
+        if(!this.voiceChannel || !this.voiceChannel.connection) return message.reply('The bot needs to be in a channel, to shuffle the queue!');
+        if(this.queue.length == 0) return message.reply('There is no song in the queue!');
+        if(!message.member.voiceChannel.id === this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+        message.react("✅");
+        await doShuffle.shuffle(this.queue);
+        this.connection.dispatcher.end();
+        message.channel.send(`The queue has been shuffled 🔀`);
+    }
+
+    /**
+     * Searches youtube for a query and adds the results to a current list
+     * and choose a result by number or cancel the search
+     * when a number is chosen, it gets placed to the queue
+     * @param {Message} message 
+     */
+    async search(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to search a video!');
+        if(this.playing && message.member.voiceChannel.id !== this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
+
+        const args = message.content.trim().split(' ');
+        if(this.searchWaiting) {
+            if(args.length < 2) return message.reply(`You need to make a choice, or cancel the current search!`);
+            if(args[1].toLowerCase() === "cancel") {
+                message.react("✅");
+                this.searchWaiting = false;
+                message.channel.send(`Canceled the search process.👌`);
+                return;
+            }
+            if(isNaN(args[1])) return message.reply(`Please enter a number or cancel 💢`);
+            if(this.searchList.length < args[1]) return message.reply(`That number is to high! 💢`);
+            message.react("✅");
+    
+            let val = args[1].trim();
+            if(val == 0) val = 1;
+            val--;
+
+            this.queue.push(this.searchList[val]);
+            message.channel.send(`Added the song to the queue 👍`);
+            
+            if(this.playing) return;
+            
+            message.channel.send("Now Playing 🎵 `" + this.searchList[val].title + "`");
+            this.searchWaiting = false;
+            this.voiceChannel = message.member.voiceChannel;
+            this.play();
+            
+            return;
+        }
+        if(args.length < 1) return message.reply(`You need to give me something to search for 🤔`);
+        
+        message.react("✅");
+        message.channel.send(`Searching 🔍 ${args.slice(1).join(' ')}`);
+
+        let res = await video.getSearch(args);
+        if(res.status === "success" && res.songs.length > 0) {
+
+            this.searchList = [...res.songs];
+            this.searchWaiting = true;
+
+            let description = ``;
+            for(let i = 0; i<res.songs.length; i++) {
+                description = description.concat(`\n\n\`${i+1}.\` [${res.songs[i].title}](${res.songs[i].officialUrl})`);
+            }
+    
+            description = description.concat(`\n\n**Type '${this.prefix}search <number>' to make a choice, or '${this.prefix}search cancel' to exit**`)
+    
+            const embed = new RichEmbed()
+                .setAuthor(message.member.user.username, message.member.user.avatarURL)
+                .setColor(this.color)
+                .setDescription(description);
+            message.channel.send(embed);
+
+        } else {
+            message.channel.send(`There was an error 😢`);
+        }
+    }
+
+    /**
+     * Lists command aliases
+     * @param {Message} message 
+     */
+    async aliases(message) {
+
+    }
+
+    /**
+     * checks the bot's response time to discord
+     * @param {Message} message 
+     */
+    async ping(message) {
+
+    }
+
+    /**
+     * Summon the bot to your channel
+     * @param {Message} message 
+     */
+    async join(message) {
+        if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel!');
+        if(this.voiceChannel && this.voiceChannel.members.size > 1) return message.reply('Sorry, I am already being used.');
+        message.react("✅");
+        message.member.voiceChannel.join();
+        message.channel.send(`Joined \`${message.member.voiceChannel.name}\` 🏃`);
+    }
+
+    /**
+     * Get the lyrics of the current playing song
+     * @param {Message} message 
+     */
+    async lyrics(message) {
+
+    }
+
+    /**
+     * Change settings of this player
+     * @param {Message} message 
+     */
+    async settings(message) {
+
     }
 
 }
