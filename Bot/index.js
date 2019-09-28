@@ -1,6 +1,25 @@
-const {Client} = require('discord.js');
+const Discord = require('discord.js');
 const Player = require('./utils/Player').Player;
-require('dotenv').config()
+require('dotenv').config();
+const fs = require('fs');
+
+const client = new Discord.Client();
+
+//Command Handler
+client.commands = new Discord.Collection();
+client.aliases = new Discord.Collection();
+
+//load commands
+fs.readdir("./Bot/commands/", (err, files) => {
+    if (err) return console.log(err);
+    files.forEach(file => {
+        if (!file.endsWith(".js")) return;
+        let props = require(`./commands/${file}`);
+        console.log("Successfully loaded " + file)
+        let commandName = file.split(".")[0];
+        client.commands.set(commandName, props);
+    });
+});
 
 class Bot {
 
@@ -18,66 +37,44 @@ class Bot {
         this.start();
     }
     async start() {
-        const client = new Client();
         client.login(this.token);
 
         client.on('ready', () => {
-            this.logger(`Logged in as ${client.user.tag}!`);
+            this.logger(`${client.user.tag} ONLINE!`);
 
+            //set some presence stuff
             client.user.setUsername("TuneZ");
             client.user.setPresence({ game: {name: 'by Adiber', type: 'WATCHING', url: 'https://adiber.at'}, status: 'dnd'}).catch(err => console.log(err));
 
+            //create a player object for each server
             client.guilds.array().forEach((guild) => {
                 this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
                 this.logger('+ ' + guild.name);
             });
-
             this.logger("Servers: " + this.servers.size)
 
         });
 
+        //message event
         client.on('message', msg => {
-
+            //check if this bot is meant
             if(!msg.content.trim().startsWith(this.prefix)) return;
 
+            //get the command
             let cmd = msg.content.trim().substr(1).split(' ')[0];
 
-            let server = this.servers.get(msg.channel.guild.id);
+            //get the right player object
+            let player = this.servers.get(msg.channel.guild.id);
+            if(!player) return;
 
-            if(cmd === 'play') server.execute(msg);
-            else if(cmd === 'playnow') server.playnow(msg);
-            else if(cmd === 'playskip') server.playskip(msg);
-            else if(cmd === 'stop') server.stop(msg);
-            else if(cmd === 'pause') server.pause(msg);
-            else if(cmd === 'resume') server.resume(msg);
-            else if(cmd === 'queue') server.listQueue(msg);
-            else if(cmd === 'volume') server.setVolume(msg);
-            else if(cmd === 'help') server.help(msg);
-            else if(cmd === 'disconnect') server.disconnect(msg);
-            else if(cmd === 'loop') server.looping(msg);
-            else if(cmd === 'remove') server.remove(msg);
-            else if(cmd === 'move') server.move(msg);
-            else if(cmd === 'skipto') server.skipto(msg);
-            else if(cmd === 'skip') server.skip(msg);
-            else if(cmd === 'clear') server.clear(msg);
-            else if(cmd === 'charts') server.charts(msg);
-            else if(cmd === 'default') server.default(msg);
-            else if(cmd === 'loopqueue') server.loopingQueue(msg);
-            else if(cmd === 'replay') server.replay(msg);
-            else if(cmd === 'cleanup') server.cleanup(msg);
-            else if(cmd === 'shuffle') server.shuffle(msg);
-            else if(cmd === 'join') server.join(msg);
-            else if(cmd === 'search') server.search(msg);
-            else if(cmd === 'ping') server.ping(msg);
-            else if(cmd === 'uptime') server.uptime(msg);
-            else if(cmd === 'np') server.np(msg);
-            else if(cmd === 'p') server.execute(msg);
-            else if(cmd === 's') server.skip(msg);
-            else if(cmd === 'd') server.default(msg);
-            else if(cmd === 'c') server.clear(msg);
+            //execute right command file
+            let commandfile = client.commands.get(cmd);
+            if(!commandfile) return;    
+                commandfile.run(player,msg);
 
         });
     }
+    //logger for the different players
     logger(message) {
         console.log(`${this.id} |=> ${message}`);
     }

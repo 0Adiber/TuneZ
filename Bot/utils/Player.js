@@ -2,7 +2,6 @@ const {RichEmbed, Message} = require('discord.js')
 const video = require('./getVideoUrl');
 const doShuffle = require('./shuffle');
 const fs = require('fs');
-var tcpp = require('tcp-ping');
 
 class Player{
     constructor(guild, options) {
@@ -22,64 +21,6 @@ class Player{
         this.color = options.color || '#ff8c00';
         this.countryCode = options.countryCode || 'AT';
         this.prefix = options.prefix || '!';
-    }
-
-    /**
-     * The actual play command
-     * @param {Message} message
-     */
-    async execute(message) {
-        const args = message.content.replace(`${this.prefix}play`, "").trim().replace(/\s\s+/g, ' ').split(' ');
-        const voiceChannel = message.member.voiceChannel;
-
-        if(!voiceChannel) return message.reply('You need to be in a voice channel to play music!');
-        if(this.playing && message.member.voiceChannel.id !== this.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
-        const permissions = voiceChannel.permissionsFor(message.client.user);
-        if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.reply('I need the permissions to join and speak in your voice channel!');
-
-        if(args[0] == '') {
-            if(this.queue.length > 0) {
-                this.voiceChannel = voiceChannel;
-                let song = this.queue.shift();
-                message.channel.send("Now Playing 🎵 `" + song.title + "`");
-                this.queue.unshift(song);
-                this.play();
-                return;
-            }
-            return message.reply("There is no Song I could play!");
-        }
-
-        message.react("✅");
-        const songInfo = await video.getUrl(args);
-
-        if(songInfo.songs) {//a list of songs because of playlist
-            songInfo.songs.forEach((song) => {
-                song.requestedBy = message.member.user.username;
-            });
-            this.queue = [...this.queue, ...songInfo.songs];
-            message.channel.send(`The playlist has been added to the queue!`);
-
-            if(this.playing) return;
-
-            message.channel.send("Now Playing 🎵 `" + songInfo.songs[0].title + "`");
-            this.voiceChannel = voiceChannel;
-            this.play();
-        } else {    //only one song
-            const song = {
-                title: songInfo.title,
-                url: songInfo.url,
-                requestedBy: message.member.user.username,
-                officialUrl: songInfo.officialUrl
-            }
-
-            this.queue.push(song);
-            message.channel.send(`${song.title} has been added to the queue!`);
-            if(this.playing) return;
-
-            message.channel.send("Now Playing 🎵 `" + song.title + "`");
-            this.voiceChannel = voiceChannel;
-            this.play();
-        }
     }
 
     /**
