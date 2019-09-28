@@ -2,6 +2,7 @@ const {RichEmbed, Message} = require('discord.js')
 const video = require('./getVideoUrl');
 const doShuffle = require('./shuffle');
 const fs = require('fs');
+var tcpp = require('tcp-ping');
 
 class Player{
     constructor(guild, options) {
@@ -787,7 +788,24 @@ class Player{
      * @param {Message} message 
      */
     async ping(message) {
+        message.channel.send('Pinging..').then(m => {
+            let ping = m.createdTimestamp-message.createdTimestamp;
+            m.edit(`Bot Latency: ${ping}ms, API Latency: ${m.client.ping}ms`);
+        });
+    }
 
+    /**
+     * Tells the uptime of the bot
+     * @param {Message} message 
+     */
+    async uptime(message){
+        let ms = message.client.uptime;
+        const sec = Math.floor((ms/1000)%60).toString();
+        const min = Math.floor((ms/(1000*60))%60).toString();
+        const hrs = Math.floor((ms/(1000*60*60))%24).toString();
+        const days = Math.floor((ms/(1000*60*60*24))).toString();
+        const duration = `${days.padStart(1,'0')} days, ${hrs.padStart(2,'0')} hours, ${min.padStart(2,'0')} min, ${sec.padStart(2,'0')} seconds`
+        message.channel.send(`I have been online for: ${duration}`);
     }
 
     /**

@@ -68,9 +68,13 @@ class Bot {
             else if(cmd === 'shuffle') server.shuffle(msg);
             else if(cmd === 'join') server.join(msg);
             else if(cmd === 'search') server.search(msg);
+            else if(cmd === 'ping') server.ping(msg);
+            else if(cmd === 'uptime') server.uptime(msg);
             else if(cmd === 'np') server.np(msg);
             else if(cmd === 'p') server.execute(msg);
             else if(cmd === 's') server.skip(msg);
+            else if(cmd === 'd') server.default(msg);
+            else if(cmd === 'c') server.clear(msg);
 
         });
     }
