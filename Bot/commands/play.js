@@ -57,6 +57,6 @@ module.exports.run = async(player, message) => {
 module.exports.help = {
     name: 'play',
     description: 'Searches the song/url and plays it.',
-    usage: '<prefix>play',
+    usage: 'play [args]',
     aliases: ['p']
 }

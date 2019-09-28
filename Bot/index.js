@@ -18,6 +18,9 @@ fs.readdir("./Bot/commands/", (err, files) => {
         console.log("Successfully loaded " + file)
         let commandName = file.split(".")[0];
         client.commands.set(commandName, props);
+        props.help.aliases.forEach(alias => {
+            client.aliases.set(alias, props);
+        });
     });
 });
 
