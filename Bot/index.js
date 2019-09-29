@@ -71,8 +71,9 @@ class Bot {
             if(!player) return;
 
             //execute right command file
-            let commandfile = client.commands.get(cmd);
-            if(!commandfile) return;    
+            let commandfile = client.aliases.get(cmd);           
+            if(!commandfile) commandfile = client.commands.get(cmd);
+            if(!commandfile) return;
                 commandfile.run(player,msg);
 
         });

@@ -27,5 +27,5 @@ module.exports.help = {
     name: 'volume',
     description: 'Sets the volume to a given value.',
     usage: 'volume [arg]',
-    aliases: []
+    aliases: ['vol', 'v']
 }

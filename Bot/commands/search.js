@@ -1,4 +1,5 @@
 const {RichEmbed} = require('discord.js');
+const video = require('../utils/getVideoUrl');
 
 module.exports.run = async(player, message) => {
     if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to search a video!');
