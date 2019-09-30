@@ -1,6 +1,7 @@
 class Player{
-    constructor(guild, options) {
+    constructor(guild, aliases, options) {
         this.guild = guild;
+        this.aliases = aliases;
         this.queue = [];
         this.playing = false;
         this.volume = 1;

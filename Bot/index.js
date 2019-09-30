@@ -8,6 +8,7 @@ const client = new Discord.Client();
 //Command Handler
 client.commands = new Discord.Collection();
 client.aliases = new Discord.Collection();
+let aliases = [];
 
 //load commands
 fs.readdir("./Bot/commands/", (err, files) => {
@@ -20,6 +21,7 @@ fs.readdir("./Bot/commands/", (err, files) => {
         client.commands.set(commandName, props);
         props.help.aliases.forEach(alias => {
             client.aliases.set(alias, props);
+            aliases.push(alias + ":" + props.help.name)
         });
     });
 });
@@ -51,7 +53,7 @@ class Bot {
 
             //create a player object for each server
             client.guilds.array().forEach((guild) => {
-                this.servers.set(guild.id, Player(guild, {color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
+                this.servers.set(guild.id, Player(guild, aliases, {color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
                 this.logger('+ ' + guild.name);
             });
             this.logger("Servers: " + this.servers.size)
