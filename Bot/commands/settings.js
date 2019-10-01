@@ -1,4 +1,4 @@
-module.exports.run = async(player, message) => {
+module.exports.run = async(player, message) => { 
 }
 module.exports.help = {
     name: 'settings',

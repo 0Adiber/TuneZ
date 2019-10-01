@@ -79,6 +79,25 @@ class Bot {
                 commandfile.run(player,msg);
 
         });
+
+        //message update
+        client.on('messageUpdate', (_,msg) => {
+            //check if this bot is meant
+            if(!msg.content.trim().startsWith(this.prefix)) return;
+
+            //get the command
+            let cmd = msg.content.trim().substr(1).split(' ')[0];
+
+            //get the right player object
+            let player = this.servers.get(msg.channel.guild.id);
+            if(!player) return;
+
+            //execute right command file
+            let commandfile = client.aliases.get(cmd);           
+            if(!commandfile) commandfile = client.commands.get(cmd);
+            if(!commandfile) return;
+                commandfile.run(player,msg);
+        });
     }
     //logger for the different players
     logger(message) {

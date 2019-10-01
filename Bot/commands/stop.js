@@ -4,6 +4,7 @@ module.exports.run = async(player, message) => {
         if(!message.member.voiceChannel.id === player.voiceChannel.id) return message.reply('You need to be in the same voice channel as I am!');
         message.react("✅");
         player.queue = [];
+        player.loop = false;
         player.connection.dispatcher.end();
         message.channel.send("Stopped ⏹️");
 }
