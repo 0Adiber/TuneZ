@@ -2,7 +2,7 @@ const video = require('../utils/getVideoUrl');
 
 module.exports.run = async(player, message) => {
     const args = message.content.replace(`${player.prefix}play`, "").replace(`${player.prefix}p`,"").trim().replace(/\s\s+/g, ' ').split(' ');
-    console.log(args)
+    
     const voiceChannel = message.member.voiceChannel;
 
     if(!voiceChannel) return message.reply('You need to be in a voice channel to play music!');
@@ -23,7 +23,7 @@ module.exports.run = async(player, message) => {
     }
 
     message.react("✅");
-    const songInfo = await video.getUrl(args);
+    const songInfo = await video.getUrl(args).catch(err => console.log(err));
 
     if(songInfo.songs) {//a list of songs because of playlist
         songInfo.songs.forEach((song) => {
