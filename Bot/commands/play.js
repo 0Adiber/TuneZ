@@ -1,7 +1,7 @@
 const video = require('../utils/getVideoUrl');
 
 module.exports.run = async(player, message) => {
-    const args = message.content.replace(`${player.prefix}play`, "").trim().replace(/\s\s+/g, ' ').split(' ');
+    const args = message.content.replace(`${player.prefix}play`, "").replace(`${player.prefix}p`,"").trim().replace(/\s\s+/g, ' ').split(' ');
     console.log(args)
     const voiceChannel = message.member.voiceChannel;
 
