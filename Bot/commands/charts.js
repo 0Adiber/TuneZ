@@ -1,3 +1,4 @@
+const video = require('../utils/getVideoUrl');
 module.exports.run = async(player, message) => {
     const args = message.content.split(' ');
         if(!message.member.voiceChannel) return message.reply('You have to be in a voice channel to use player command!');
