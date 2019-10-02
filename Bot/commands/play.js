@@ -2,6 +2,7 @@ const video = require('../utils/getVideoUrl');
 
 module.exports.run = async(player, message) => {
     const args = message.content.replace(`${player.prefix}play`, "").trim().replace(/\s\s+/g, ' ').split(' ');
+    console.log(args)
     const voiceChannel = message.member.voiceChannel;
 
     if(!voiceChannel) return message.reply('You need to be in a voice channel to play music!');
