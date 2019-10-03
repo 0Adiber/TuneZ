@@ -1,6 +1,7 @@
 
 const fetch = require('node-fetch');
-const yt = require('youtube-dl');
+//const yt = require('youtube-dl');
+const dyt = require('./getDirectUrl');
 require('dotenv').config()
 
 const getUrl = async(video) => {
@@ -47,8 +48,28 @@ const getUrl = async(video) => {
                     });
                     return;
                 }
-                url = url.items[0].id.videoId;
                 
+                let title = url.items[0].snippet.title;
+                url = url.items[0].id.videoId;
+
+                let officialUrl = "https://www.youtube.com/watch?v="+url;
+                dyt.getUrl(url)
+                    .then(r => {
+                        resolve({
+                            status: "success",
+                            title: title,
+                            url: r.url,
+                            officialUrl: officialUrl,
+                            vid: url
+                        });
+                    })
+                    .catch(err => reject({
+                        status: "no success",
+                        err: err
+                    }));
+                
+
+                /*
                 yt.getInfo("https://www.youtube.com/watch?v=" + url, ['--format=worst'], function(err, info) {
                     if(err) {
                         reject({
@@ -64,7 +85,7 @@ const getUrl = async(video) => {
                         officialUrl: "https://www.youtube.com/watch?v=" + info.id,
                         vid: info.id
                     });
-                });
+                });*/
 
             }).catch(err => console.log(err));
         }
@@ -177,6 +198,35 @@ const getCharts = (code) => {
 const getInfo = (video) => {
     return new Promise((resolve, reject) => {
 
+        fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q="+video+"&key=" + process.env.YT_API_KEY).then(res => res.json()).then(r => {
+
+                let url = r;
+                if(!url.items) {
+                    reject({});
+                    return;
+                }
+
+                let title = url.items[0].snippet.title;
+                let officialUrl = "https://www.youtube.com/watch?v="+video;
+
+                dyt.getUrl(video)
+                    .then(r => {
+                        resolve({
+                            status: "success",
+                            title: title,
+                            url: r.url,
+                            officialUrl: officialUrl,
+                            vid: url
+                        });
+                    })
+                    .catch(err => reject({
+                        status: "no success",
+                        err: err
+                    }));
+                })
+            .catch(err => resolve({}));
+
+        /*
         yt.getInfo("https://www.youtube.com/watch?v=" + video, ['--format=worst'], function(err, info) {
                 //sometimes: ERROR: This video contains content from SME, who has blocked it on copyright grounds.
                 //thats why I resolve an empty object :)
@@ -194,7 +244,7 @@ const getInfo = (video) => {
                     vid: info.id
                 });
             });
-
+            */
     });
 }
 
