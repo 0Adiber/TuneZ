@@ -1,7 +1,7 @@
 class Player{
-    constructor(guild, aliases, options) {
-        this.guild = guild;
-        this.aliases = aliases;
+    constructor(options = {}) {
+        this.guild = options.guild;
+        this.aliases = options.aliases;
         this.queue = [];
         this.playing = false;
         this.volume = 1;
@@ -12,11 +12,12 @@ class Player{
         this.searchList = [];
         this.searchWaiting = false;
 
-        //options
-        options = options || {};
+        //console.log(options)
+
         this.color = options.color || '#ff8c00';
         this.countryCode = options.countryCode || 'AT';
         this.prefix = options.prefix || '!';
+        this.announcesongs = false;
     }
 
     /**
@@ -49,8 +50,6 @@ class Player{
                     dispatcher.setVolume(this.volume);
                 })
                 .on('end', ()=>{
-                    console.log("Song ended!");
-
                     if(this.loop) {
                         this.queue.unshift(this.currentSong);   
                     }
@@ -60,12 +59,14 @@ class Player{
                     }
 
                     this.playing = false;
+                    
+                    if(this.announcesongs && queue.length > 0) message.channel.send("🔔 Next up: `" + queue[0].title + "`");
+
                     if(!this.disconnected) this.play();
                 })
                 .on('error', error => {
                     console.log(error);
                 });
-                dispatcher.setVolume(this.volume);
             });
         }catch(err) {
             console.log(err);

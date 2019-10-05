@@ -53,7 +53,7 @@ class Bot {
 
             //create a player object for each server
             client.guilds.array().forEach((guild) => {
-                this.servers.set(guild.id, Player(guild, aliases, {color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
+                this.servers.set(guild.id, Player({guild: guild, aliases: aliases, color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
                 this.logger('+ ' + guild.name);
             });
             this.logger("Servers: " + this.servers.size)
@@ -62,42 +62,60 @@ class Bot {
 
         //message event
         client.on('message', msg => {
-            //check if this bot is meant
-            if(!msg.content.trim().startsWith(this.prefix)) return;
-
-            //get the command
-            let cmd = msg.content.trim().substr(1).split(' ')[0];
-
+            //check if message was sent by the bot himself
+            if(msg.author.id == client.user.id) return;
             //get the right player object
             let player = this.servers.get(msg.channel.guild.id);
             if(!player) return;
+
+            //check if this bot is meant
+            if(!msg.content.trim().startsWith(player.prefix)) return;
+
+            //get the command
+            let cmd = msg.content.trim().substr(player.prefix.length).split(' ')[0];
 
             //execute right command file
             let commandfile = client.aliases.get(cmd);           
             if(!commandfile) commandfile = client.commands.get(cmd);
             if(!commandfile) return;
+            try {
                 commandfile.run(player,msg);
-
+            }catch(err) {
+                this.logger(err);
+            }
         });
 
         //message update
         client.on('messageUpdate', (_,msg) => {
-            //check if this bot is meant
-            if(!msg.content.trim().startsWith(this.prefix)) return;
-
-            //get the command
-            let cmd = msg.content.trim().substr(1).split(' ')[0];
-
+            //check if message was sent by the bot himself
+            if(msg.author.id == client.user.id) return;
             //get the right player object
             let player = this.servers.get(msg.channel.guild.id);
             if(!player) return;
+
+            //check if this bot is meant
+            if(!msg.content.trim().startsWith(player.prefix)) return;
+
+            //get the command
+            let cmd = msg.content.trim().substr(player.prefix.length).split(' ')[0];
 
             //execute right command file
             let commandfile = client.aliases.get(cmd);           
             if(!commandfile) commandfile = client.commands.get(cmd);
             if(!commandfile) return;
+            try {
                 commandfile.run(player,msg);
+            }catch(err) {
+                this.logger(err);
+            }
         });
+
+        //bot joins server
+        client.on('guildCreate', guild => {
+            this.servers.set(guild.id, Player({guild: guild, aliases: aliases, color: this.color, countryCode: this.countryCode, prefix: this.prefix}));
+            this.logger('+ ' + guild.name);
+        });
+
     }
     //logger for the different players
     logger(message) {
