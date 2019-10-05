@@ -55,10 +55,13 @@ const getUrl = async(video) => {
                 let officialUrl = "https://www.youtube.com/watch?v="+url;
                 dyt.getUrl(url)
                     .then(r => {
+                        if(!r) {
+                            reject({status: "no success", err: "no link found"})
+                        }
                         resolve({
                             status: "success",
                             title: title,
-                            url: r.url,
+                            url: r.url, //r.url
                             officialUrl: officialUrl,
                             vid: url
                         });
