@@ -39,7 +39,7 @@ module.exports.run = async(player, message) => {
         message.react("✅");
         message.channel.send(`Searching 🔍 ${args.slice(1).join(' ')}`);
 
-        let res = await video.getSearch(args);
+        let res = await video.getSearch(args).catch(err => console.log(err));;
         if(res.status === "success" && res.songs.length > 0) {
 
             player.searchList = [...res.songs];
