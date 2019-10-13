@@ -38,17 +38,12 @@ const getSearch = async(query, order) => {
                         songs: [...promises].filter(v => Object.keys(v).length !== 0),
                         status: "success"
                     })
-                });
+                }).catch(err => console.log(err));
                 
             }).catch(err => console.log(err));
         }).catch(err => console.log(err));
     });
 
 }
-
-async function lala() {
-    console.log(await getSearch("elvis presley", "viewCount"))
-}
-lala();
 
 exports.getSearch = (video,order) => getSearch(video,order);

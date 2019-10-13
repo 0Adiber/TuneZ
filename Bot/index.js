@@ -116,6 +116,12 @@ class Bot {
             this.logger('+ ' + guild.name);
         });
 
+        //bot leaves/gets kicked from server
+        client.on('guildDelete', guild => {
+            this.servers.delete(guild.id);
+            this.logger('- ' + guild.name);
+        });
+
     }
     //logger for the different players
     logger(message) {
