@@ -1,7 +1,8 @@
 const {RichEmbed} = require('discord.js');
+require('dotenv').config();
 
 module.exports.run = async(player, message) => {
-    let description = `✅-out http://ec2-34-226-142-167.compute-1.amazonaws.com:7043/ \n**for a list of commands**`;
+    let description = `✅-out ${process.env.HELP_PAGE} \n**for a list of commands**`;
 
         const embed = new RichEmbed()
             .setTitle("Help")

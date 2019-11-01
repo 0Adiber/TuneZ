@@ -1,4 +1,6 @@
 const {RichEmbed} = require('discord.js');
+const fs = require('fs');
+
 module.exports.run = async(player, message) => {
     if(!message.member.hasPermission('ADMINISTRATOR')) return message.reply('You have to be an Administrator to change the permissions');
 
@@ -20,16 +22,21 @@ module.exports.run = async(player, message) => {
             .addField('🖊️ Color', `Currently: ${player.color}\n\`${player.prefix}settings color\``, false);
         message.channel.send(embed);
     } else {
+        let content = JSON.parse(fs.readFileSync(`./Bot/serverdata/${message.channel.guild.id}.json`, {encoding:'utf8'}));
+
         if(args.length == 2 && args[0].toLowerCase() === 'prefix') {
             player.prefix = args[1];
+            content.prefix = args[1];
             message.channel.send(`The new prefix is: ${player.prefix}`);
         }else if(args[0].toLowerCase() === 'announcesongs') {
             player.announcesongs = !player.announcesongs;
+            content.announce = !player.announcesongs;
             message.channel.send(`Song Announcements is now ${player.announcesongs?'on':'off'}`)
         }else if(args.length == 2 && args[0].toLowerCase() === 'ccode') {
             args[1] = args[1].toUpperCase();
             if(!ccodes.includes(args[1])) return message.reply(`${ccode} is not a valid \`ISO 3166-1 alpha-2\` country code!`);
             player.countryCode = args[1];
+            content.ccode = args[1];
             message.channel.send(`Default Country Code changed to \`${args[1]}\``)
         }else if(args.length == 2 && args[0].toLowerCase() === 'color') {
             args[1] = args[1].replace('0x', '#');
@@ -45,6 +52,7 @@ module.exports.run = async(player, message) => {
             } else {
                 return message.reply(`Thats not a valid parameter for the color option. Valid parameters are: \`Color Name,Hex,RGB Array\``)
             }
+            content.color = player.color;
             return message.channel.send(`Color changed to \`${args[1]}\``)
         } else {
             let description = `Use \`${player.prefix}settings <option> <value>\` to change an option.`;
@@ -59,6 +67,9 @@ module.exports.run = async(player, message) => {
                 .addField('🖊️ Color', `Currently: ${player.color}\n\`${player.prefix}settings color\``, true);
             message.channel.send(embed);
         }
+
+        fs.writeFileSync(`./Bot/serverdata/${message.channel.guild.id}.json`, JSON.stringify(content));
+
     }
 
 }

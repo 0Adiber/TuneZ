@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 class Player{
     constructor(options = {}) {
         this.guild = options.guild;
@@ -12,12 +14,25 @@ class Player{
         this.searchList = [];
         this.searchWaiting = false;
 
-        //console.log(options)
 
-        this.color = options.color || '#ff8c00';
-        this.countryCode = options.countryCode || 'AT';
-        this.prefix = options.prefix || '!';
-        this.announcesongs = false;
+        //PLAYER SETTINGS PER SERVER
+            fs.closeSync(fs.openSync(`./Bot/serverdata/${this.guild.id}.json`, 'a'));
+
+            let content = JSON.parse(fs.readFileSync(`./Bot/serverdata/${this.guild.id}.json`, {encoding:'utf8'})||"{}");
+
+            this.color = content.color || options.color || '#ff8c00';
+            this.countryCode = content.ccode || options.countryCode || 'AT';
+            this.prefix = content.preifx || options.prefix || '!';
+            this.announcesongs = content.announce || false;
+
+            content.color = this.color;
+            content.ccode = this.countryCode;        
+            content.prefix = this.prefix;
+            content.announce = this.announcesongs;
+
+            fs.writeFileSync(`./Bot/serverdata/${this.guild.id}.json`, JSON.stringify(content));
+        //OVER
+
     }
 
     /**
