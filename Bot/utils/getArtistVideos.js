@@ -10,7 +10,6 @@ const getSearch = async(query, order) => {
         query = query.replace(" ", "+").replace(",", "+");
 
         fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=1&q="+query+"&key="+process.env.YT_API_KEY).then(res => res.json()).then(rrr => {
-            console.log(rrr)
             if(rrr.error) {
                 reject({status:"no success", err: "No results"});
                 return;

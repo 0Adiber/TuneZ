@@ -2,7 +2,9 @@
 const fetch = require('node-fetch');
 //const yt = require('youtube-dl');
 const dyt = require('./getDirectUrl');
+const ytdl = require('ytdl-core');
 require('dotenv').config()
+
 
 const getUrl = async(video) => {
 
@@ -254,3 +256,4 @@ const getInfo = (video) => {
 exports.getUrl = (video) => getUrl(video);
 exports.getCharts = (code) => getCharts(code);
 exports.getSearch = (video) => getSearch(video);
+exports.getInfo = (video) => getInfo(video);

@@ -1,3 +1,5 @@
+const {RichEmbed} = require('discord.js');
+
 module.exports.run = async(player, message) => {
     if(!player.playing) {
         const embed = new RichEmbed()

@@ -16,6 +16,6 @@
     "opusscript": "0.0.7",
     "tcp-ping": "^0.1.1",
     "youtube-dl": "^2.0.1",
-    "ytdl-core": "^0.29.7"
+    "ytdl-core": "^3.2.2"
   }
 }
